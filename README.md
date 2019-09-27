@@ -1,30 +1,64 @@
 # egg-multipart
 
-[![NPM version][npm-image]][npm-url]
-[![build status][travis-image]][travis-url]
-[![Build Status](https://dev.azure.com/eggjs/egg/_apis/build/status/eggjs.egg-multipart)](https://dev.azure.com/eggjs/egg/_build/latest?definitionId=8)
-[![Test coverage][codecov-image]][codecov-url]
-[![David deps][david-image]][david-url]
-[![Known Vulnerabilities][snyk-image]][snyk-url]
-[![npm download][download-image]][download-url]
-
-[npm-image]: https://img.shields.io/npm/v/egg-multipart.svg?style=flat-square
-[npm-url]: https://npmjs.org/package/egg-multipart
-[travis-image]: https://img.shields.io/travis/eggjs/egg-multipart.svg?style=flat-square
-[travis-url]: https://travis-ci.org/eggjs/egg-multipart
-[codecov-image]: https://codecov.io/github/eggjs/egg-multipart/coverage.svg?branch=master
-[codecov-url]: https://codecov.io/github/eggjs/egg-multipart?branch=master
-[david-image]: https://img.shields.io/david/eggjs/egg-multipart.svg?style=flat-square
-[david-url]: https://david-dm.org/eggjs/egg-multipart
-[snyk-image]: https://snyk.io/test/npm/egg-multipart/badge.svg?style=flat-square
-[snyk-url]: https://snyk.io/test/npm/egg-multipart
-[download-image]: https://img.shields.io/npm/dm/egg-multipart.svg?style=flat-square
-[download-url]: https://npmjs.org/package/egg-multipart
-
 Use [co-busboy](https://github.com/cojs/busboy) to upload file by streaming and
 process it without save to disk(using the `stream` mode).
 
 Just use `ctx.multipart()` to got file stream, then pass to image processing liberary such as `gm` or upload to cloud storage such as `oss`.
+
+# 源码阅读
+
+基于co-busboy模块，解析multipart，挂载ctx.request.files和ctx.request.body。
+
+中间件在请求时初始化。
+
+
+
+## 文件结构
+
+``` bash
+├── app
+|  ├── extend
+|  |  └── context.js - 在ctx上挂载multipart，saveRequestFiles，cleanupRequestFiles等方法。
+|  ├── middleware
+|  |  └── multipart.js - 请求中调用saveRequestFiles()
+|  └── schedule
+|     └── clean_tmpdir.js
+├── app.js - 处理config.multipart，整理后，设置config.multipartParseOptions。
+├── config
+|  └── config.default.js - 提供config.multipart
+```
+
+## 对外模块依赖
+
+![](./graphviz/module.svg)
+
+
+## 逐个文件分析
+
+### app.js
+
+获取config.multipart，对其中的size进行数字化处理。
+
+处理白名单whitelist。
+
+给app.config.multipartParseOptions赋值。
+
+打日志。
+
+### app/extend/context.js
+
+在ctx上挂载multipart，saveRequestFiles，cleanupRequestFiles等方法。
+
+multipart基于co-busboy解析文件流内容。
+
+saveRequestFiles调用multipart解析，并挂载到ctx.request.files和ctx.request.body上。
+
+cleanupRequestFiles是清空文件路径上文件。
+
+### app/middleware/multipart.js
+
+在请求过程中调用saveRequestFiles()。
+
 
 ## Whitelist of file extensions
 

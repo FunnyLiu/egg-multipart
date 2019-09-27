@@ -11,6 +11,7 @@ const mkdirp = require('mz-modules/mkdirp');
 const pump = require('mz-modules/pump');
 const rimraf = require('mz-modules/rimraf');
 
+// 继承自原生stream模块的Readable。
 class EmptyStream extends Readable {
   _read() {
     this.push(null);
@@ -27,19 +28,23 @@ async function limit(code, message) {
   throw err;
 }
 
+// 给外暴露给ctx上的方法和属性
 module.exports = {
   /**
    * clean up request tmp files helper
    * @function Context#cleanupRequestFiles
    * @param {Array<String>} [files] - file paths need to clenup, default is `ctx.request.files`.
    */
+  // 清空请求文件
   async cleanupRequestFiles(files) {
+    // 如果不传参数，默认参数给出ctx.request.files
     if (!files || !files.length) {
       files = this.request.files;
     }
     if (Array.isArray(files)) {
       for (const file of files) {
         try {
+          // 清空文件
           await rimraf(file.filepath);
         } catch (err) {
           // warning log
@@ -58,6 +63,7 @@ module.exports = {
    *  - {Object} options.limits
    *  - {Function} options.checkFile
    */
+  // 保存请求文件
   async saveRequestFiles(options) {
     options = options || {};
     const ctx = this;
@@ -75,6 +81,7 @@ module.exports = {
     const requestFiles = [];
 
     const parts = ctx.multipart(multipartOptions);
+    // 获取文件内容
     let part;
     do {
       try {
@@ -145,7 +152,7 @@ module.exports = {
         return await limit('Request_fileSize_limit', 'Reach fileSize limit');
       }
     } while (part != null);
-
+    // 将文件挂载在ctx.request.body和ctx.request.files上
     ctx.request.body = requestBody;
     ctx.request.files = requestFiles;
   },
@@ -160,6 +167,7 @@ module.exports = {
    *  - {Function} options.checkFile
    * @return {Yieldable} parts
    */
+  // 封装ctx.multipart
   multipart(options) {
     // multipart/form-data
     if (!this.is('multipart')) {
@@ -168,6 +176,7 @@ module.exports = {
     if (this[HAS_CONSUMED]) throw new TypeError('the multipart request can\'t be consumed twice');
 
     this[HAS_CONSUMED] = true;
+    // 拿到app.js封装的multipartParseOptions
     const parseOptions = Object.assign({}, this.app.config.multipartParseOptions);
     options = options || {};
     if (typeof options.autoFields === 'boolean') parseOptions.autoFields = options.autoFields;
@@ -175,6 +184,7 @@ module.exports = {
     if (options.checkFile) parseOptions.checkFile = options.checkFile;
     // merge and create a new limits object
     if (options.limits) parseOptions.limits = Object.assign({}, parseOptions.limits, options.limits);
+    // 基于co-busboy模块对内容进行解析
     return parse(this, parseOptions);
   },
 

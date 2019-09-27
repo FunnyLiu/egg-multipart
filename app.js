@@ -4,15 +4,18 @@ const path = require('path');
 const bytes = require('humanize-bytes');
 
 module.exports = app => {
+  //拿到配置
   const options = app.config.multipart;
   // make sure to cast the value of config **Size to number
   for (const key in options) {
+    // 首先将mb，kb等解析
     if (/^\w+Size$/.test(key)) {
       options[key] = bytes(options[key]);
     }
   }
 
   let checkExt;
+  // 处理白名单
   if (typeof options.whitelist === 'function') {
     checkExt = options.whitelist;
   } else if (Array.isArray(options.whitelist)) {
@@ -52,6 +55,7 @@ module.exports = app => {
   }
 
   // https://github.com/mscdex/busboy#busboy-methods
+  //主要是给multipartParseOptions赋值
   app.config.multipartParseOptions = {
     autoFields: options.autoFields,
     defCharset: options.defaultCharset,
