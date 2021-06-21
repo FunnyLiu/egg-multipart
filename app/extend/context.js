@@ -227,6 +227,7 @@ module.exports = {
       stream = new EmptyStream();
     }
     stream.fields = parts.field;
+    //监听了busboy模块的超出文件大小限制的事件。
     stream.once('limit', () => {
       const err = new Error('Request file too large');
       err.name = 'MultipartFileTooLargeError';
